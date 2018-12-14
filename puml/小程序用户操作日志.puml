@@ -1,0 +1,17 @@
+@startuml
+
+小程序->openapi:记录关键日志（openapi接口：xxxxx）
+
+group sop换取用户信息
+openapi->sop:传入unionid或openid（sopservice接口：xxxxx）
+sop-->openapi:返回：园区用户信息employee（employeeid、username、phone）
+end
+
+group 调用存入日志接口
+openapi->user:传入unionid或openid、employee、action（userapi接口：xxxxx）
+user-->openapi:返回：success
+end
+
+openapi-->小程序:返回响应结果
+
+@enduml

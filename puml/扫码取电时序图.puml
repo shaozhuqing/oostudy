@@ -1,0 +1,81 @@
+@startuml
+
+actor "用户" as user
+boundary "小程序" as mini
+boundary OpenAPI
+boundary UserAPI
+boundary "广告系统(ad)" as ad
+boundary "服务端(ioas)" as ioas
+boundary "LifeSmartAPI" as lsapi
+entity "入墙插座" as chazuo
+
+autonumber "[00]"
+
+user -> mini: 扫码调起小程序
+note left
+scanQrcode: '/xxx/scan_mini_qrcode.json'
+end note
+
+
+mini -> OpenAPI: 获取用户身份
+
+note left
+1、获取openapi接口（open->front）
+code2sessionkey:
+'/miniprogram/get_session_key_by_js_code.json'
+end note
+
+OpenAPI -> UserAPI:确认身份有效
+
+note left
+2、获取User接口（user->front）
+db_user（t_user$|t_user_platform$|t_user_weixin$）
+checkMobile:
+'/miniprogram/bind_mobile_miniprogram.json'
+
+end note
+
+UserAPI --> OpenAPI: 返回结果
+OpenAPI --> mini: 返回结果
+
+mini -> ad:获取广告
+
+note left
+3、获取广告ad接口（openapi->ad.api）
+api:'/ad/ad/get_by_id.json'
+end note
+
+ad --> mini: 返回结果
+mini --> mini: 播放十秒广告
+
+user -> mini: 点击取电按钮
+mini -> OpenAPI: 请求取电接口
+OpenAPI --> OpenAPI: 生成取电记录
+OpenAPI -> ioas: 请求取电接口
+
+
+ioas -> lsapi:请求电源开关接口（打开）
+
+note left
+4、获取ioas接口（ioas->api）
+api:'/lifesmart/change_socket.json'
+end note
+
+lsapi -> chazuo:发送插座通电命令
+chazuo --> user:插座通电
+
+group Task：每分钟检查插座授权状态，授权过期自动调取插座关闭接口
+ioas --> ioas: 每分钟查询无授权插座
+
+note left
+5、调用ioas接口（ioas->task）
+api:'/lifesmart/close_socket.json'
+end note
+
+ioas -> lsapi:请求电源开关接口（关闭）
+lsapi -> chazuo:发送插座断电命令
+end
+
+chazuo --> user:插座断电
+
+@enduml

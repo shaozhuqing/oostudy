@@ -1,0 +1,64 @@
+@startuml
+actor "用户" as user
+boundary "英诺创新空间会员\n(小程序/PC端)" as xcx
+database "任务文件维护\n(业务DB)" as list
+control "文件中转OSS/Windows\n(服务)" as file
+collections "消息服务\n(微信)" as message
+control "支付服务\n(微信)" as pay
+database "任务调度\n(树莓派DB)" as task
+boundary "打印服务\n(树莓派打印)" as print
+
+group 文件上传
+user->xcx:上传待打印文件(A12345)-获取fileid(B12345)
+xcx->file:上传到指定服务器
+file->file:文件格式转PDF\n(A12345->B12345.PDF)
+xcx->list:记录上传文件信息
+    group 微信提醒（文件上传成功提醒）
+    xcx->message:触发消息提醒服务
+    message-->user:发送微信消息通知
+    message-->list:记录通知日志
+    end
+end
+
+note left
+1、接口：文件上传指定服务器转为PDF；
+2、接口：通知触发获取文件进行打印
+3、接口：微信消息通知
+4、服务：文件统一转换成PDF
+5、服务：获取打印文件页数
+6、服务：支付功能（微信、SOP企业余额）
+7、服务：打印功能（树莓派）
+end note
+
+group 支付费用
+user->xcx:查看待打印列表
+xcx->list:查询上传文件信息
+list-->xcx:返回文件列表
+user->xcx:预览待打印文件
+xcx->file:预览打印上传文件
+file-->xcx:返回转换后PDF文件(B12345.PDF)
+user->xcx:支付待打印文件-fileid
+xcx->pay:统计页数并唤起支付服务
+pay-->list:记录支付信息，修改状态
+    group 微信提醒（支付成功提醒）
+    xcx->message:触发消息提醒服务
+    message-->user:发送微信消息通知
+    message-->list:记录通知日志
+    end
+end
+
+group 执行打印
+user->xcx:扫描机器二维码(空间:spaceid；打印机:ip)\n选择已支付文件打印-fileid(B12345.PDF)
+xcx->task:发送任务调度 http://10.130.123.123/getprintfile?fileid=B12345
+task-->file:获取指定打印文件
+file->print:获取待打印文件路径
+print->print:执行已支付文件打印
+    group 微信提醒（打印成功提醒）
+    xcx->message:触发消息提醒服务
+    message-->user:发送微信消息通知
+    message-->list:记录通知日志
+    end
+end
+
+@enduml
+

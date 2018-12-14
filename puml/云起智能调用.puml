@@ -1,0 +1,9 @@
+@startuml
+actor User
+User -> APP:请求app
+APP -> LifeSmart:https://api.ilifesmart.com/app/auth.authorize?\nid=***&appkey=***&time=***\n&auth_callback=***&did=***&sign=***&lang=zh
+LifeSmart --> User:用户授权登录页面
+User -> User:用户授权
+User -> APP:auth_callback的URL链接，\nURL中带有usertoken和userid等参数。\n智能应用端读取URL中的usertoken执行后续操作。
+
+@enduml

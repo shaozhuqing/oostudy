@@ -1,0 +1,23 @@
+@startuml
+actor User
+autonumber
+User -> CRX:使用Chrome浏览器，\n安装crx（Epson iProjection）插件
+User -> CRX:打开iProjection插件
+group 接口：获取用户身份授权码
+CRX -> API:iProjection插件欢迎页，请求授权二维码
+API -> Weixin:请求微信接口
+Weixin --> API:生成二维码图片
+API --> CRX:接口-显示用户身份授权二维码（有效路径）
+end
+CRX --> User:用户扫描二维码
+User -> User:用户确认微信授权
+group 接口：获取有效会议室（长轮询）
+CRX -> API:请求获取有效会议室相关信息
+Weixin --> API:授权成功消息通知（openid）
+API -> API:验证(查询openid用户所在公司，\n列出有效预定会议室相关设备信息)
+API --> CRX: 接口-获取有效会议室
+end
+User-> CRX:用户选择可使用的会议室设备
+CRX -> Epson_Projection:开启投影
+Epson_Projection --> User:用户使用投影
+@enduml

@@ -1,0 +1,47 @@
+@startuml
+actor "小程序用户端" as u
+boundary "微信端服务器" as wx
+boundary "开发者服务器" as fw
+
+group 生成3drSessionId
+u->wx:执行小程序方法：wx.login()
+wx-->u:返回：js_code
+u->fw:发送：js_code、appId、secretkey和grant_type
+fw-->fw:生成3rdSessionId
+note left
+生成3rdSessionId关联session_key和openId
+end note
+fw-->u:返回：随机生成3rdSessionId
+u-->u:缓存：3rdSessionId（storage）
+end
+
+group 获取加密串
+u->wx:执行小程序方法：wx.getUserInfo()
+wx-->u:返回：encryptdData（加密串）、iv（偏移向量）
+end
+
+group 解密返回加密数据
+    u->fw:发送：3rdSessionId、encryptedData、iv（解密参数）
+    fw-->fw:解密
+    note left
+    调用aes解密方法，算法为 AES-128-CBC，数据采用PKCS#7填充
+    {
+        "openId": "OPENID",
+        "nickName": "NICKNAME",
+        "gender": GENDER,
+        "city": "CITY",
+        "province": "PROVINCE",
+        "country": "COUNTRY",
+        "avatarUrl": "AVATARURL",
+        "unionId": "UNIONID",
+        "watermark":
+        {
+            "appid":"APPID",
+            "timestamp":TIMESTAMP
+        }
+    }
+    end note
+    fw-->u:解密算法返回结果
+end
+@enduml
+
